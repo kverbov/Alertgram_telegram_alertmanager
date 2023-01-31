@@ -1,6 +1,0 @@
----
-- targets:
-    - "blackbox_exporter.localhost|http_2xx|https://nexus.tbank.trrr.tvip-clients/|omniprom.to.nexus"
-  labels:
-    env: test
-    severity: low

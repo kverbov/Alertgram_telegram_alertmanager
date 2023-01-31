@@ -1,8 +1,0 @@
----
-- targets:
-    - "prometheus-prod-dbank-common.apps.ocp.bank.rrr.vip-clients|ocp4cp.prod.evo.prometheus"
-  labels:
-    env: "prod"
-    project: "evo"
-    origin_prometheus: 'DBOEVO PROD OCP4'
-

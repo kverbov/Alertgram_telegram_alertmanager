@@ -1,8 +1,0 @@
----
-- targets:
-    - "prometheus-cert-dbank-common.apps.ocp.bank.rrr.vip-clients|ocp4cp.cert.evo.prometheus"
-  labels:
-    env: "cert"
-    project: "evo"
-    origin_prometheus: 'DBOEVO CERT OCP4'
-

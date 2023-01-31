@@ -1,8 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9187"
-  labels:
-    env: "test"
-    project: "nicb"
-    instance: "Rrr-bla-bla
-    db: "nicb"

@@ -1,6 +1,0 @@
----
-- targets:
-    - "blackbox_exporter.localhost|http_2xx|http://quay.paas.bank.rrr.vip-clients/|omniprom.to.quay"
-  labels:
-    env: prod
-    severity: low

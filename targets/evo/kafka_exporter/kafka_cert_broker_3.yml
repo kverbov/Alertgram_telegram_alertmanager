@@ -1,8 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9308"
-  labels:
-    env: "cert"
-    project: "evo"
-    instance: "kafka.cert.broker.3"
-    owner: "profiteroles"

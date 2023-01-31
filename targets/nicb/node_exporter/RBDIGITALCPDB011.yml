@@ -1,8 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9100"
-  labels:
-    env: "prod"
-    project: "nicb"
-    instance: "Rrr-bla-bla
-    origin_prometheus: 'Prometheus'

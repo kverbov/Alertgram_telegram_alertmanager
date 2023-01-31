@@ -1,6 +1,0 @@
----
-- targets:
-    - "blackbox_exporter.localhost|http_2xx|https://bitbucket.domain/projects|omniprom.to.bitbucket"
-  labels:
-    env: prod
-    severity: low

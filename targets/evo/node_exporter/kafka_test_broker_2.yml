@@ -1,8 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9100"
-  labels:
-    env: "test"
-    project: "evo"
-    instance: "kafka.test.broker.2"
-    owner: "profiteroles"

@@ -1,6 +1,0 @@
----
-- targets:
-    - "blackbox-exporter-blackbox-exporter.apps.ocp.bank.rrr.vip-clients|tcp_connect|nsproxy.bank.rrr.vip-clients:8080|ocp4cp.to.nsproxy"
-  labels:
-    env: prod
-    severity: normal

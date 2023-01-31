@@ -1,8 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9121"
-  labels:
-    env: "dev"
-    project: "evo"
-    instance: "keydb.dev"
-    owner: "profitroles"

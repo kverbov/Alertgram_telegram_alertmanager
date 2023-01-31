@@ -1,9 +1,0 @@
----
-- targets:
-    - "192.168.1.2:9187"
-  labels:
-    env: "prod"
-    project: "ppe"
-    instance: "postgresql.loyalty.2"
-    db: "loyalty"
-    owner: "salmon"

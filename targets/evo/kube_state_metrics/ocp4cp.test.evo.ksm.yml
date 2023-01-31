@@ -1,8 +1,0 @@
----
-- targets:
-    - "kube-state-metrics-test-dbank-common.apps.tpaas.tbank.trrr.tvip-clients|ocp4cp.test.evo.ksm"
-  labels:
-    env: "test"
-    project: "evo"
-    origin_prometheus: 'Prometheus'
-

@@ -1,6 +1,0 @@
----
-- targets:
-    - "bbe-dr-dbank-common.apps.ocp1.bank.rrr.vip-clients|http_2xx|http://192.168.1.2:9099/integration/version.txt|ocp4dr.to.prod.qulix.integration"
-  labels:
-    env: prod
-    severity: normal

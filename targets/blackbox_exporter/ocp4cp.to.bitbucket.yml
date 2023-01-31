@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.ocp.bank.rrr.vip-clients|http_2xx|https://bitbucket.domain/projects|ocp4cp.to.bitbucket"
+  labels:
+    env: prod
+    severity: normal

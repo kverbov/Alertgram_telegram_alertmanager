@@ -1,0 +1,8 @@
+---
+- targets:
+    - "prometheus-dev-dbank-common.apps.tpaas.tbank.trrr.tvip-clients|ocp4dt.dev.evo.prometheus"
+  labels:
+    env: "dev"
+    project: "evo"
+    origin_prometheus: 'DBOEVO DEV OCP4'
+

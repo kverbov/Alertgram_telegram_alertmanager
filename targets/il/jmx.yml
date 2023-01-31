@@ -1,0 +1,7 @@
+- targets:
+  - '192.168.1.2:5500'
+  labels:
+    project: 'il'
+    env: 'prod'
+    origin_prometheus: 'Prometheus'
+

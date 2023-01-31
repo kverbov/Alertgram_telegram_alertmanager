@@ -1,0 +1,8 @@
+---
+- targets:
+    - "192.168.1.2:9187"
+  labels:
+    instance: "postgresql.node2"
+    env: "prod"
+    project: "prl30"
+

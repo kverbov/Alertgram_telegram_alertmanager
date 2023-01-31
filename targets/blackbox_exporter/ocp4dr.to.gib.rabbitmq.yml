@@ -1,0 +1,7 @@
+---
+- targets:
+    - "bbe-dr-dbank-common.apps.ocp1.bank.rrr.vip-clients|tcp_connect|egress-tunnel-router-5672.tunnel-router:5672|ocp4dr.to.gib.rabbitmq"
+  labels:
+    env: prod
+    severity: high
+    owner: groupib

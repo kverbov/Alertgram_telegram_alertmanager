@@ -1,0 +1,6 @@
+- targets:
+  - 'ssl-mobilegateway-metrics-nicb-test.apps.tpaas.tbank.trrr.tvip-clients:443'
+  labels:
+    project: 'nicb'
+    env: 'test'
+    origin_prometheus: 'Prometheus'

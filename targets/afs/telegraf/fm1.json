@@ -1,0 +1,14 @@
+[
+  {
+    "labels":
+    {
+      "env": "prod",
+      "project": "afs",
+      "origin_prometheus": "Prometheus"
+    },
+    "targets":
+    [
+      "rrr-sspmossfm1.bank.rrr.vip-clients:9273"
+    ]
+  }
+]

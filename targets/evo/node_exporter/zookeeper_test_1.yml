@@ -1,0 +1,8 @@
+---
+- targets:
+    - "192.168.1.2:9100"
+  labels:
+    env: "test"
+    project: "evo"
+    instance: "zookeeper.test.1"
+    owner: "profiteroles"

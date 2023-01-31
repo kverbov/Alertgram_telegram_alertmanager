@@ -1,0 +1,8 @@
+---
+- targets:
+    - "192.168.1.2:9308"
+  labels:
+    env: "prod"
+    project: "evo"
+    instance: "kafka.prod.broker.5"
+    owner: "profiteroles"

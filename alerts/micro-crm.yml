@@ -1,0 +1,16 @@
+groups:
+
+  - name: MicrocrmAlerts
+    rules:
+       - alert: Openshift_micro-crm
+         annotations:
+           description: Problem on {{$labels.project}} {{$labels.microservice}} {{$labels.reason}}
+         expr: sum(
+          kube_pod_container_status_waiting_reason {
+          reason=~"CrashLoopBackOff|ErrImagePull|CreateContainerConfigError|ImagePullBackOff|Init:CrashLoopBackOff", project=~"micro-crm"} > 0) by (origin_prometheus, project, microservice, reason)
+         labels:
+           severity: high
+           sdlc_tribe: microcrm
+           sdlc_team: microcrm
+           sdlc_app: micro-crm
+           service: micro-crm-services

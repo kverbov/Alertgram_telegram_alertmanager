@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.ocp.bank.rrr.vip-clients|tcp_connect|192.168.1.2:1565|ocp4cp.to.ilqm1"
+  labels:
+    env: prod
+    severity: normal

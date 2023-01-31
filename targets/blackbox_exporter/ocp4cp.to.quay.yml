@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.ocp.bank.rrr.vip-clients|http_2xx|http://quay.paas.bank.rrr.vip-clients:5000/|ocp4cp.to.quay"
+  labels:
+    env: prod
+    severity: normal

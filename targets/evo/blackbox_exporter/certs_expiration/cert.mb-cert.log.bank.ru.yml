@@ -1,0 +1,10 @@
+---
+- targets:
+    - "bbe-certprod-dbank-common.apps.ocp.bank.rrr.vip-clients|proxied_http_2xx|https://mb-cert-log.bank.rrr.vip-clients/|cert.mb-cert-log.bank.rrr.vip-clients"
+  labels:
+    env: "cert"
+    project: "evo"
+    owner: "profiteroles"
+    severity: "high"
+
+  

@@ -1,0 +1,43 @@
+groups:
+  ###########################################################################
+  # ppp
+  ###########################################################################
+  - name: ppp
+    rules:
+      - alert: pppPodRestarts
+        expr: increase ( kube_pod_container_status_restarts_total {namespace =~ "ppp-prod"} [10m] ) > 3
+        for: 30s
+        labels:
+          severity: high
+        annotations:
+          summary: "Pod {{ $labels.pod }} restarts more than 3 times in the last 10 minutes"
+          description: "Pod {{ $labels.pod }} is crash looping\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/123213213/openshift-projects-pod-info?editPanel=53&orgId=1&refresh=1m&var-origin_prometheus=OCP4%20PROD&var-Namespace=ppp-prod&var-DeployConfig=All"
+          
+      - alert: pppPodNotReady
+        expr: sum(kube_pod_status_ready { condition = "true", pod !~ ".+-deploy", namespace="ppp-prod", deployconfig !~ ".*notification.*"}  == 0) by (namespace, pod)
+        labels:
+          severity: panic
+        annotations:
+          summary: 'POD {{$labels.pod}} not ready.'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: PppPodCPUusage
+        expr: (sum(rate(container_cpu_usage_seconds_total{container!~"POD|", namespace ="ppp-prod"}[5m])) by(origin_prometheus, namespace, pod)) / (sum(kube_pod_container_resource_requests{resource="cpu", namespace = "ppp-prod"}) by(origin_prometheus, namespace, pod)) > 2.5
+        labels:
+          severity: normal
+        annotations:
+          summary: 'Pod {{ $labels.pod }} is consuming {{ $value | printf "%.2f"}} times more CPU (in 5 min) than the value of CPU requests'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+            
+      - alert: PppPodMEMORYusage
+        expr: (sum(container_memory_working_set_bytes{container!="", container!="POD", namespace ="ppp-prod"}) by(origin_prometheus, namespace, pod)) / (sum(kube_pod_container_resource_limits{resource="memory", namespace = "ppp-prod"}) by(origin_prometheus, namespace, pod)) > 0.9
+        for: 10s
+        labels:
+          severity: normal
+        annotations:
+          summary: 'Pod {{ $labels.pod }} uses more than 90% limit of memory: {{ $value | printf "%.2f"}} '
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}

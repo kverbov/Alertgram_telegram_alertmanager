@@ -1,0 +1,252 @@
+groups:
+
+###################################################################
+# Salmon Core team
+###################################################################
+
+  - name: SalmonAlerts
+    rules:
+
+###NodeExporter_HOST_UTIL_rules_salmon###
+      - alert: salmonHostHighCPULoad
+        expr: (100 -(avg by(instance) (rate(node_cpu_seconds_total{mode="idle",owner="salmon",job="node_exporter",env="prod"}[5m])) * 100)) > 60
+        for: 5m
+        labels:
+          severity: high
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: 'CPU utilization is {{ $value | printf "%.2f" }} % for more than 5m. Threshold 60% CPU util.'
+          advice: 'Check CPU utilization. Instructions: https://kb.bank.rrr.vip-clients/pages/viewpage.action?pageId=451335178'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHostHighCpuIOWait
+        expr: (avg by(instance) (rate(node_cpu_seconds_total{mode="iowait",owner="salmon",job="node_exporter",env="prod"}[6m])) * 100) > 30
+        for: 5m
+        labels:
+          severity: high
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: 'CPU IOWAIT is {{ $value | printf "%.2f" }} % for more than 6m. Threshold 30% IOwaits'
+          advice: 'Check disks utilization'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHostOutOfMemory
+        expr: (node_memory_MemAvailable_bytes {job="node_exporter",owner="salmon",env="prod"} / node_memory_MemTotal_bytes * 100) < 10
+        for: 2m
+        labels:
+          severity: high
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: 'Host out of memory. Node memory is filling up ({{ $value | printf "%.2f"}}% left). Threshold 10% free memory.'
+          advice: 'Check MEMORY utilization'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHostMemoryUnderMemoryPressure
+        expr: rate(node_vmstat_pgmajfault{job="node_exporter",owner="salmon",env="prod"}[1m]) > 1000
+        for: 2m
+        labels:
+          severity: warning
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: 'The node is under heavy memory pressure. High rate of major page faults {{ $value | printf "%.2f"}}. Threshold 1000 pagefaults'
+          advice: 'Check MEMORY utilization and find out the page faults causing app. Threshold 1000 pagefaults'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHostOutOfInodes
+        expr: node_filesystem_files_free{job="node_exporter",owner="salmon",env="prod"} / node_filesystem_files * 100 < 10
+        for: 1m
+        labels:
+          severity: warning
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: 'Host out of inodes {{ $value | printf "%.2f"}} % left. Threshold 10%.'
+          help: 'Check df -hi on host'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+###PostgresExporter_rules_salmon###
+      - alert: salmonDatabaseActiveConnections
+        expr: (sum (pg_stat_database_numbackends{owner="salmon",env="prod"}) by (instance))/(sum (pg_settings_max_connections{owner="salmon",env="prod"}) by (instance))*100 > 55
+        for: 1m
+        labels:
+          severity: warning
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          #env: {{ $labels.env }}
+        annotations:
+          summary: 'Too many database connections {{ $value | printf "%.2f"}} % consumed. Threshold 55%'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonPg_publication_count #ACHTUNG!!! custom class, custom metric
+        expr: pg_publication_count{job="postgresql_exporter", owner="salmon", env="prod"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+          env: prod
+        annotations:
+          summary: "Replication of one of the pg_publication_tables table has failed"
+          help: "select * from pg_catalog.pg_publication left join pg_catalog.pg_replication_slots on pg_replication_slots.slot_name=pg_publication.pubname"
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonDiskFreeLessThan15%
+        expr: ( 100 - ( node_filesystem_avail_bytes { mountpoint !~ "/boot|/home", owner="salmon", env="prod" } / node_filesystem_size_bytes { mountpoint !~ "/boot|/home", owner="salmon", env="prod" } * 100 ) ) > 85
+        for: 1m
+        labels:
+          severity: high
+          owner: "salmon"
+          project: "{{ $labels.project }}"
+        annotations:
+          summary: 'There is {{ $value | printf "%.2f"}}% of disk space used!!! Threshold 85%'
+          advice: 'Cleanup disk ASAP!!! Instructions: https://kb.bank.rrr.vip-clients/pages/viewpage.action?pageId=451335341'
+          help: 'df -h'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonPostgresDown
+        expr: pg_up { env = "prod", owner="salmon" } != 1
+        for: 30s
+        labels:
+          severity: high
+          owner: "salmon"
+        annotations:
+          summary: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 30s"
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonPostgresWalTooBig
+        expr: pg_wals_size { owner="salmon" } > 16106127360 # 15 * 1024^3
+        for: 3m
+        labels:
+          owner: "salmon"
+          severity: high
+        annotations:
+          summary: 'WAL is too big {{ humanize $value }} on {{ $labels.instance }} PostgreSQL! > 3m.  Threshold 15Gb.'
+          advice: 'https://kb.bank.rrr.vip-clients/pages/viewpage.action?pageId=451344879'
+          help: 'ALTER SYSTEM SET archive_command=":"; SELECT pg_reload_conf(); as a temp solution.'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHikari_connections_slow
+        expr: sum (hikaricp_connections_acquire_seconds_max {owner="salmon"}) by (dc, env, namespace, owner, project) > 50
+        for: 0m
+        labels:
+            severity: warning
+            owner: "salmon"
+        annotations:
+          description: "Check database, hikaricp connetctions is slow."
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHikari_connections_pending
+        expr: hikaricp_connections_pending {owner="salmon"} > 1
+        for: 5m
+        labels:
+            severity: warning
+            owner: "salmon"
+        annotations:
+          description: "Check database, hikaricp pending connetctions."
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonHikari_connections_timeout
+        expr: hikaricp_connections_timeout_total{owner="salmon"} > 0
+        for: 5m
+        labels:
+            severity: warning
+            owner: "salmon"
+        annotations:
+          description: "Check database, hikaricp timed out connetctions."
+
+###Microservices_rules_salmon###
+      - alert: salmon_Alert_pod_CPU
+        expr: sum (rate (container_cpu_usage_seconds_total{owner="salmon", image!="", env="prod"}[1m])) by (deployconfig,namespace,env,pod,owner,project) > 1 
+        for: 30s
+        labels:
+          severity: normal
+          owner: "salmon"
+          env: 'prod'
+        annotations:
+          summary: 'Pod is consuming high CPU {{ $value | printf "%.2f"}} cores avg in 1 m'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonAppPodsRestartingTooFrequently
+        expr: sum((rate ( kube_pod_container_status_restarts_total [10m] ) * 600) * on(uid) group_right(pod) kube_pod_info{owner="salmon"}) by (deployconfig,namespace,node,env,pod,owner,project) >= 2
+        for: 30s
+        labels:
+          severity: normal
+          owner: "salmon"
+        annotations:
+          #summary: 'Pods are restarting too frequently (during past 10 min). Problem with a few pods: ask around (did anyone deploy anything new?) and alert the team responsible for the service; Problem with lots of pods (different services) - alert OpenShift cluster admins and EVO devops ASAP!'
+          summary: 'Pods are restarting too frequently (during past 10 min).'
+          #advice: 'Most of the time the problem is just with a few pods and the most usual reason is service misconfiguration. But sometimes due to failures of liveness/readiness probes (services check availability of the systems they depend on).'
+          help: "Go to 'Health > Health (rdbo|ipsm)' dashboard to find the restarting pods. Visit linker > Microservices to find the responsible dev team."
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+     # - alert: salmonAppPodsLowRAM
+     #   expr: ((sum(container_memory_working_set_bytes{owner="salmon", container!~"log.+"}) by (container)) / (sum(kube_pod_container_resource_limits_memory_bytes{owner="salmon", container!~"log.+"}) by (container)) * 100) > 70
+     #   for: 30s
+     #   labels:
+     #     severity: normal
+     #     owner: "salmon"
+     #   annotations:
+     #     #summary: 'Pods are restarting too frequently (during past 10 min). Problem with a few pods: ask around (did anyone deploy anything new?) and alert the team responsible for the service; Problem with lots of pods (different services) - alert OpenShift cluster admins and EVO devops ASAP!'
+     #     summary: 'Less than 30% free RAM remaining'
+     #     #advice: 'Most of the time the problem is just with a few pods and the most usual reason is service misconfiguration. But sometimes due to failures of liveness/readiness probes (services check availability of the systems they depend on).'
+     #     help: "-"
+     #     timestamp: >
+     #       {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: salmonAppPodsSlowHttpResponse
+        expr: irate(http_server_requests_seconds_sum{owner="salmon",container=~".+", exception="None", uri!~"/metrics/.+"}[5m]) / irate(http_server_requests_seconds_count{owner="salmon",container=~".+", exception="None", uri!~"/metrics/.+"}[5m]) > 0.2 
+        for: 5m
+        labels:
+          severity: normal
+          owner: "salmon"
+        annotations:
+          #summary: 'Pods are restarting too frequently (during past 10 min). Problem with a few pods: ask around (did anyone deploy anything new?) and alert the team responsible for the service; Problem with lots of pods (different services) - alert OpenShift cluster admins and EVO devops ASAP!'
+          summary: 'Http request time > 200ms'
+          #advice: 'Most of the time the problem is just with a few pods and the most usual reason is service misconfiguration. But sometimes due to failures of liveness/readiness probes (services check availability of the systems they depend on).'
+          help: "-"
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: SalmonPodToDependentResourceFail
+        expr: >-
+            count (
+                label_replace(
+                    { owner="salmon", job = "pods-extra", __name__ =~ '.+_up' },
+                    "dependent_resource",
+                    "$1",
+                    "__name__",
+                    "(.+)_up"
+                ) != 1
+            )
+            by (origin_prometheus, project, env, namespace, dc, owner, dependent_resource) > 0
+        for: 30s
+        labels:
+          severity: high
+          owner: "salmon"
+        annotations:
+          summary: "{{ $value }} pod(s) in [{{ $labels.origin_prometheus }}/{{ $labels.namespace }}] of {{ $labels.dc }} report(s): {{ $labels.dependent_resource }} is down for more than 30s"
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}

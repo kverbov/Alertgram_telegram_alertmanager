@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.tpaas.tbank.trrr.tvip-clients|http_2xx|https://nexus.tbank.trrr.tvip-clients/|ocp4dt.to.nexus"
+  labels:
+    env: test
+    severity: low

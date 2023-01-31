@@ -1,0 +1,10 @@
+---
+- targets:
+    - "192.168.1.2:9187"
+  labels:
+    env: "prod"
+    project: "evo"
+    instance: "postgresql.prsn.1"
+    db: "prsn"
+    owner: "profiteroles"
+    ip: "192.168.1.2"

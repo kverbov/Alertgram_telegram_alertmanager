@@ -1,0 +1,8 @@
+---
+- targets:
+    - "blackbox_exporter.localhost|tcp_connect|192.168.1.2:9100|elasticsearch.prod.8_TEST_port_monitorimng_from_prometheus"
+  labels:
+    env: test
+    severity: normal
+    owner: "kopylov"
+    project: "evo"

@@ -1,0 +1,1189 @@
+global:
+  resolve_timeout: 1m
+  #  smtp_smarthost: 'smtp.bank.ru:25'
+  #  smtp_smarthost: 'localhost:25'
+  smtp_smarthost: "192.168.1.2:25"
+  smtp_from: bla-bla@bank.ru"
+  #  smtp_from: bla-bla@bank.ru'
+  smtp_hello: "bank.ru"
+  smtp_require_tls: false
+#  smtp_auth_username: bank\bankmonitoringmail
+#  smtp_auth_password: password
+#  http_config:
+#    tls_config:
+#      insecure_skip_verify: true
+
+route:
+  #group_by: ['alertname', 'env', 'owner', 'project']
+  group_by: ["..."]
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 3h
+  #  receiver: 'zabvmadm.email'
+  receiver: "null"
+  routes:
+    # For all prod EVO 1-time alerts (and no resolves) about events like "Pod got OOMK'ed"
+    # + maybe all prod EVO 'cert expires soon' alerts?
+    - matchers:
+        - project = evo
+        - env = prod
+        - alert_once = true
+        - send_resolved = false
+      repeat_interval: 999d
+      receiver: "evo_common.tg.once.no.resolved"
+
+    # + maybe all prod EVO 'cert expires soon' alerts?
+    - matchers:
+        - project = evo
+        - env = prod
+        - alert_once = true
+        - send_resolved = false
+        - type = patroni
+      repeat_interval: 999d
+      receiver: "evo_common.tg.once.no.resolved"
+
+    # For all prod EVO alerts except alerts in list and alerts from Grafana
+    - matchers:
+        - project = evo
+        - env = prod
+        - alertname != EvoPodToDependentResourceFail
+        - alertname != Evodbo-bla-bla.tg
+        - alertname != DiskFreeLessThan15%
+        - alertname != EvoBlackboxProbeDown
+        - alertname != Evodbo-bla-bla.tg
+        - alertname != TargetOrExporterProdDown
+        - alertname != BlackboxProbeDown
+        - alertname != BlackboxProbeProdDown
+        - alertname != KafkaTopicFromGibNotGettingMessages
+        - alertsource != grafana
+        - alertgroup != department
+      receiver: "evo_common.tg"
+      continue: true
+
+    # For prod EVO alert OS to GIB VPN connection (kafka topic)
+    - matchers:
+        - project = evo
+        - env = prod
+        - alertname = KafkaTopicFromGibNotGettingMessages
+      repeat_interval: 5m
+      receiver: "evo_common.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - env = prod
+        - alertname = EvoPostgresInactiveReplSlots
+      repeat_interval: 30m
+      receiver: "evo_common.tg"
+      continue: true
+
+    # Kopylov
+    - matchers:
+        - project = evo
+        - owner = kopylov
+      receiver: "kopylov.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - owner = kopylov
+        - alert_once = true
+        - send_resolved = false
+        - type = patroni
+      repeat_interval: 999d
+      receiver: "kopylov.tg.once.no.resolved"
+
+    # For all tech alerts owned by SALMON-CORE team
+    #- matchers:
+    #    - owner = salmon
+    #  receiver: "evo_profiteroles.tg"
+    #  continue: true
+
+    - matchers:
+        - project != evo
+        - owner = salmon
+      receiver: "sac_salmon.tg"
+      continue: true
+
+      # For all tech alerts owned by SALMON-EVO team
+
+    - matchers:
+        - project = evo
+        - owner = salmon
+      receiver: "evo_salmon.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - owner = kopylov
+        - type = cert182
+      repeat_interval: 30d
+      receiver: "kopylov.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - owner = kopylov
+        - type = cert60
+      repeat_interval: 1d
+      receiver: "kopylov.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - owner = kopylov
+        - type = cert10
+        - send_resolved = false
+      repeat_interval: 12h
+      receiver: "kopylov.tg"
+      continue: true
+
+    # Alert matcher for LPET team
+    - matchers:
+        - project = evo
+        - owner = lpet
+      receiver: "evo_lpet.tg"
+      continue: true
+
+    # CELD, grafana, telegram
+    - matchers:
+        - project = celd
+        - alertsource = grafana
+      receiver: "celd.tg"
+      continue: true
+
+    # Price_and_Billing, grafana, telegram
+    - matchers:
+        - project = PriceBilling
+        - alertsource = grafana
+      receiver: "PriceBilling.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - env = prod
+        - alertsource = grafana
+        - owner = common
+
+    # For all prod common blackbox_exporter alerts
+    - matchers:
+        - job = blackbox_exporter
+        - owner = common
+        - env = prod
+      receiver: "evo_common.tg"
+      continue: true
+
+    # For all prod common kafka_exporter alerts (valid until we migrate to own Kafka clusters, then alert should also match tag 'project: evo')
+    - matchers:
+        - job = kafka_exporter
+        - env = prod
+      receiver: "evo_profiteroles.tg"
+      continue: true
+
+    # Factoring problems
+    - match_re:
+        namespace: ^Rrr-bla-bla
+      receiver: "factoring.all.tg"
+      continue: true
+
+    - match_re:
+        namespace: ^Rrr-bla-bla
+      receiver: "factoring.prod.tg"
+      continue: true
+
+    - match_re:
+        namespace: ^Rrr-bla-bla
+      receiver: "factoring.email"
+      continue: true
+
+    # For all prod common blackbox_exporter alerts
+    #    - matchers:
+    #        - job = blackbox_exporter
+    #        - owner = common
+    #        - env = prod
+    #      receiver: 'evo_profiteroles.email'
+    #      continue: true
+
+    # For all prod common blackbox_exporter alerts
+    - matchers:
+        - job = blackbox_exporter
+        - owner = common
+        - env = prod
+      receiver: "rds.email"
+      continue: true
+
+    # For all prod common blackbox_exporter alerts
+    - matchers:
+        - job = blackbox_exporter
+        - owner = common
+        - env = prod
+      receiver: "evo_profiteroles.tg"
+      continue: true
+
+    # For all prod common kafka_exporter alerts (valid until we migrate to own Kafka clusters, then alert should also match tag 'project: evo')
+    - matchers:
+        - job = kafka_exporter
+        - env = prod
+      receiver: "evo_profiteroles.tg"
+      continue: true
+
+    # For all alerts owned by profiteroles team
+    #    - matchers:
+    #        - project = evo
+    #        - owner = profiteroles
+    #        #- env prod
+    #      receiver: 'evo_profiteroles.email'
+    #      continue: true
+
+    # For all alerts owned by profiteroles team
+    - matchers:
+        - project = evo
+        - owner = profiteroles
+        - env = prod
+        - alertname != DiskFreeLessThan15%
+
+      receiver: "rds.email"
+      continue: true
+
+    # For all alerts owned by profiteroles team
+    - matchers:
+        - project = evo
+        - owner = profiteroles
+        #- env = prod
+        - alertname != Evodbo-bla-bla.tg
+      receiver: "evo_profiteroles.tg"
+      
+    - matchers:
+        - project = evo
+        - owner = profiteroles
+        - alertname = Evodbo-bla-bla.tg
+        #- env = prod
+      mute_time_intervals: 
+        - gmfn_dbo-bla-bla.tg
+      receiver: "evo_profiteroles.tg"
+
+    - matchers:
+        - project = evo
+        - owner = baguette
+        - env = prod
+      receiver: "evo_baguette.tg"
+
+    - matchers:
+        - project = evo
+        - owner = bordeaux
+        - env = prod
+      receiver: "evo_bordeaux.tg"
+
+    - matchers:
+        - project = evo
+        - owner = courage
+        - env = prod
+      receiver: "evo_courage.tg"
+
+    - matchers:
+        - project = evo
+        - owner = courvoisier
+        - env = prod
+      receiver: "evo_courvoisier.tg"
+
+    - matchers:
+        - project = evo
+        - owner = dst
+        - env = prod
+      receiver: "evo_dst.tg"
+
+    - matchers:
+        - project = evo
+        - owner = flibustier
+        - env = prod
+      receiver: "evo_flibustier.tg"
+
+    - matchers:
+        - project = evo
+        - owner = gendarme
+        - env = prod
+      receiver: "evo_gendarme.tg"
+
+    - matchers:
+        - project = evo
+        - owner = laduree
+        - env = prod
+      receiver: "evo_laduree.tg"
+
+    - matchers:
+        - project = evo
+        - owner = lavitesse
+      #        - env = prod
+      receiver: "evo_lavitesse.tg"
+
+    - matchers:
+        - project = evo
+        - owner = leclair
+        - env = prod
+      receiver: "evo_leclair.tg"
+
+    - matchers:
+        - project = evo
+        - owner = lemans
+        - env = prod
+      receiver: "evo_lemans.tg"
+
+    - matchers:
+        - project = evo
+        - owner = mib
+        - env = prod
+      receiver: "evo_mib.tg"
+
+    - matchers:
+        - project = evo
+        - owner = premium
+        - env = prod
+      receiver: "evo_premium.tg"
+
+    - matchers:
+        - project = evo
+        - owner = groupib
+        - env = prod
+      receiver: "evo_groupib.tg"
+
+    # ART-Bank - grafana,telegram
+    - matchers:
+        - project = artbank
+        - alertsource = grafana
+        - alertgroup = eod
+      receiver: "artbank.tg"
+      repeat_interval: 10m
+
+    - matchers:
+        - project = artbank
+        - alertsource = grafana
+        - alertgroup = common
+      receiver: "artbank_common.tg"
+      repeat_interval: 10m
+
+    # Credit - grafana,prometheus,telegram
+    - matchers:
+        - project = credit
+        - alertsource = grafana
+        - env = prod
+      receiver: "creditprod.tg"
+      continue: true
+
+    - matchers:
+        - project = credit
+        - alertsource = grafana
+        - env != prod
+      receiver: "credittestcert.tg"
+      continue: true
+
+    - matchers:
+        - namespace =~ "credit-test|credit-cert"
+        - alertgroup = CREDIT
+      receiver: "credittestcert.tg"
+      continue: true
+      repeat_interval: 10m
+
+    - matchers:
+        - namespace = "credit-prod"
+        - alertgroup = CREDIT
+      receiver: "creditprod.tg"
+      continue: true
+      repeat_interval: 10m
+
+    - matchers:
+        - project = evo
+        - owner = concorde
+        - env = prod
+      receiver: "evo_concorde.tg"
+      continue: true
+
+    - matchers:
+        - project = evo
+        - owner = pnb
+        - env = prod
+      receiver: "pnb.tg"
+      continue: true
+
+    # For all bankP matchers
+    - matchers:
+        - project = bankp_atm
+        - env = prod
+      receiver: "bankp_atm.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_chat
+        - env = prod
+      receiver: "bankp_chat.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_cm
+        - env = prod
+      receiver: "bankp_cm.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_corp
+        - env = prod
+      receiver: "bankp_corp.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_fils
+        - env = prod
+      receiver: "bankp_fils.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_nfo
+        - env = prod
+      receiver: "bankp_nfo.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_payr
+        - env = prod
+      receiver: "bankp_payr.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_ppro
+        - env = prod
+      receiver: "bankp_ppro.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_react
+        - env = prod
+      receiver: "bankp_react.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_rmb
+        - env = prod
+      receiver: "bankp_rmb.tg"
+      continue: true
+
+    - matchers:
+        - project = bankp_sggo
+        - env = prod
+      receiver: "bankp_sggo.tg"
+      continue: true
+
+    - match_re:
+        job: ^(vmselect|vminsert|vmstorage|vmagent|vmalert|alertmanager|karma)$
+      receiver: "zabvmadm.tg"
+      continue: true
+
+    #    - match_re:
+    #        job: ^(vmselect|vminsert|vmstorage|vmagent|vmalert|alertmanager|karma)$
+    #      receiver: 'zabvmadm.email'
+    #      continue: true
+
+    #    - match_re:
+    #        job: ^(vmselect|vminsert|vmstorage|vmagent|vmalert|alertmanager|karma)$
+    #      receiver: 'zabbix'
+    #      continue: true
+
+    - match_re:
+        namespace: ^(pro-test-dbo-bla-bla.tg
+      receiver: "dbo-bla-bla.tg
+      continue: true
+      repeat_interval: 10m
+
+    - match_re:
+        namespace: ^(pro-prod-dbo-bla-bla.tg
+      receiver: "dbo-bla-bla.tg
+      continue: true
+      repeat_interval: 10m
+
+    - match_re:
+        namespace: ^(pro-prod-dbo-bla-bla.tg
+      receiver: "dbo-bla-bla.tg
+      continue: true
+      repeat_interval: 10m
+
+    - match_re:
+        namespace: ^(nicb|nicb-test|nicb-dev-1|nicb-dev-2|nicb-cert)$
+      receiver: "nicb.tg"
+      continue: true
+
+    - match_re:
+        namespace: ^(nicb|nicb-test|nicb-dev-1|nicb-dev-2|nicb-cert)$
+      receiver: "nicb.email"
+      continue: true
+
+    - match_re:
+        namespace: ^(nicb)$
+      receiver: "nicbprod.tg"
+      continue: true
+      repeat_interval: 10m
+
+    #    - match_re:
+    #        namespace: ^(nicb|nicb-test|nicb-dev-1|nicb-dev-2|nicb-cert)$
+    #      receiver: 'nicb_2line.email'
+    #      repeat_interval: 3d
+    #      continue: true
+
+    - match_re:
+        namespace: ^(dst-prod-api|dst-prod-app|dst-prod-infra)$
+      receiver: "dstit.tg"
+      continue: true
+      repeat_interval: 10m
+
+    - matchers:
+        - namespace = ^(dst-prod-api|dst-prod-app|dst-prod-infra)$
+        - owner != test
+      receiver: "alertsdigitalsales.tg"
+      continue: true
+      repeat_interval: 10m
+
+    - matchers:
+        - project =  wso2
+      receiver: "wso2.email"
+      continue: true
+
+    - matchers:
+        - project = wso2
+      receiver: "wso2.tg"
+      continue: true
+
+    - matchers:
+        - project = cicd
+      receiver: cicd.email
+      repeat_interval: 7d
+      continue: true
+
+    - matchers:
+        - project = cicd
+      receiver: cicd.tg
+      repeat_interval: 7d
+      continue: true
+
+    - matchers:
+        - project = kafka
+        - env = prod
+      receiver: "kafka.tg"
+      continue: true
+
+    - matchers:
+        - project = payroll
+        - source = grafana
+        - env = prod
+      receiver: "payroll.prod.email"
+      continue: true
+
+    - matchers:
+        - project = payroll
+        - source = grafana
+        - env = prod
+      receiver: "payroll.prod.tg"
+
+    - matchers:
+        - project = payroll
+        - source = grafana
+        - env != prod
+      receiver: "payroll.test.email"
+      continue: true
+
+    - matchers:
+        - project = payroll
+        - source = grafana
+        - env != prod
+      receiver: "payroll.test.tg"
+
+    - matchers:
+        - project = department
+        - env = cert
+      receiver: "departmentcert.tg"
+      continue: true
+      repeat_interval: 2h
+      group_interval: 5m
+      group_wait: 10s
+
+    - matchers:
+        - project = department
+        - env = prod
+      receiver: "departmentprod.tg"
+      continue: true
+      repeat_interval: 2h
+      group_interval: 5m
+      group_wait: 10s
+
+    - matchers:
+        - namespace = ppp-prod
+      receiver: "teamppp.tg"
+      continue: true
+
+    - matchers:
+        - project = sdlc
+      repeat_interval: 12h
+      group_interval: 5m
+      group_wait: 30s
+      receiver: "logstash"
+      continue: true
+
+mute_time_intervals:
+  - name: gmfn_dbo-bla-bla.tg
+    time_intervals:
+     # Mute on Saturdays and Sundays, all day.
+     #- weekdays: ['Saturday','Sunday']
+     # Mute in the morning and in the evening, any day.
+     - times:
+       - start_time: '21:10'
+         end_time: '21:30'
+     - times:
+       - start_time: '00:10'
+         end_time: '00:30'
+         
+receivers:
+  - name: "null"
+  - name: "zabvmadm.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+         
+  - name: "zabvmadm.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  #  - name: 'zabbix'
+  #    webhook_configs:
+  #      - url: http://192.168.1.2:9096/alerts
+  #        send_resolved: true
+
+  - name: "dbo-bla-bla.tg
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "dbo-bla-bla.tg
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "dbo-bla-bla.tg
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "nicb.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "nicb_2line.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "nicb.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "nicbprod.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "rds.email"
+    email_configs:
+      - bla-bla@bank.ru
+        bla-bla@bank.ru
+      - bla-bla@bank.ru
+        bla-bla@bank.ru
+
+  #  - name: 'evo_profiteroles.email'
+  #    email_configs:
+  #      - bla-bla@bank.ru
+  #        to: bla-bla@bank.ru
+
+  #      - from: bla-bla@bank.ru
+  #        to: bla-bla@bank.ru
+  #        to: rdbo-bla-bla.tg
+  #      - from: bla-bla@bank.ru
+  #        send_resolved: true
+  #        to: bla-bla@bank.ru
+
+  - name: "evo_common.tg.once.no.resolved"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_common.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_profiteroles.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_baguette.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_bordeaux.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_courage.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_courvoisier.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_dst.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_flibustier.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_gendarme.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_laduree.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_lavitesse.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_leclair.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_lemans.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_mib.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_concorde.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_premium.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_salmon.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_groupib.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "evo_lpet.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "dstit.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "alertsdigitalsales.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_atm.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_chat.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_cm.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_corp.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_fils.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_nfo.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_payr.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_ppro.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_react.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_rmb.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "bankp_sggo.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  #  - name: 'nicb.email'
+  #    email_configs:
+  #      - bla-bla@bank.ru
+  #        send_resolved: true
+  #        to: bla-bla@bank.ru
+
+  #inhibit_rules:
+  #  - source_match:
+  #      severity: 'critical'
+  #    target_match:
+  #      severity: 'warning'
+  #    equal: ['alertname', 'dev', 'instance']
+
+  - name: "wso2.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+        
+  - name: "factoring.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "wso2.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "cicd.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "cicd.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "celd.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "PriceBilling.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  # ART-Bank INFO/EOD channel
+  - name: "artbank.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  # ART-Bank common alerts channel
+  - name: "artbank_common.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "creditprod.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "credittestcert.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "kafka.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+  - name: "kopylov.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+  - name: "kopylov.tg.once.no.resolved"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+  - name: "sac_salmon.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+  - name: "factoring.prod.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+  - name: "factoring.all.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "payroll.prod.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "payroll.prod.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: false
+
+  - name: "payroll.test.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: false
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "payroll.test.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: false
+
+  - name: "vip-department-team.email"
+    email_configs:
+      - to: bla-bla@bank.ru
+        send_resolved: true
+
+  - name: "departmentcert.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "departmentprod.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "teamppp.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "pnb.tg"
+    webhook_configs:
+      - url: "https://api.telegram.org/hooks/bla-bla-bla"
+        send_resolved: true
+        max_alerts: 1
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+
+  - name: "logstash"
+    webhook_configs:
+      - url: "https://logstash-sdlc-dev.apps.tpaas.tbank.trrr.tvip-clients"
+        send_resolved: true
+        http_config:
+          tls_config:
+            insecure_skip_verify: true
+

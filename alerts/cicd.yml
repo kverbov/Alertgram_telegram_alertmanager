@@ -1,0 +1,51 @@
+groups:
+  ###################################################################
+  # CICD
+  ###################################################################
+  - name: cicd
+    rules:
+      - alert: bitbucketActiveUsersWarning
+        expr: bitbucket_active_users_gauge{env="prod", instance="bitbucket.domain:443", job="bitbucket", origin_prometheus="Prometheus", project="cicd"} >= 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/000000413/bitbucket?orgId=1&refresh=30s"
+          summary: "Bitbucket active users >= 1000"
+
+      - alert: bitbucketActiveUsersCritical
+        expr: bitbucket_active_users_gauge{env="prod", instance="bitbucket.domain:443", job="bitbucket", origin_prometheus="Prometheus", project="cicd"} >= 1010
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/000000413/bitbucket?orgId=1&refresh=30s"
+          summary: "Bitbucket active users >= 1010"
+
+      - alert: bitbucketActiveUsersDisaster
+        expr: bitbucket_active_users_gauge{env="prod", instance="bitbucket.domain:443", job="bitbucket", origin_prometheus="Prometheus", project="cicd"} >= 1015
+        for: 5m
+        labels:
+          severity: disaster
+        annotations:
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/000000413/bitbucket?orgId=1&refresh=30s"
+          summary: "Bitbucket active users >= 1015"
+          
+      - alert: jvmthreadsdeadlocked
+        expr: jvm_threads_deadlocked{env="prod", instance="bitbucket.domain:443", job="bitbucket", origin_prometheus="Prometheus", project="cicd"} >= 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/000000413/bitbucket?orgId=1&refresh=30s"
+          summary: "jvm_threads_deadlocked > 0 within 1 minute"
+          
+      - alert: jvmthreadsdeadlocked
+        expr: jvm_threads_deadlocked{env="prod", instance="bitbucket.domain:443", job="bitbucket", origin_prometheus="Prometheus", project="cicd"} >= 1
+        for: 5m
+        labels:
+          severity: disaster
+        annotations:
+          dashboard: "https://grafana.bank.rrr.vip-clients:3000/d/000000413/bitbucket?orgId=1&refresh=30s"
+          summary: "disaster!!! jvm_threads_deadlocked > 0 within 5 minute"
+

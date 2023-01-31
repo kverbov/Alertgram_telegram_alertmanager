@@ -1,0 +1,10 @@
+---
+- targets:
+    - "bbe-certprod-dbank-common.apps.ocp.bank.rrr.vip-clients|proxied_http_2xx|https://ips-cert-api.bank.ru/|cert.ips-cert-api.bank.ru"
+  labels:
+    env: "cert"
+    project: "evo"
+    owner: "profiteroles"
+    severity: "high"
+
+  

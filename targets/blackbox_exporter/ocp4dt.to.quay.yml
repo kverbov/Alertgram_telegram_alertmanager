@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.tpaas.tbank.trrr.tvip-clients|http_2xx|http://quay.paas.bank.rrr.vip-clients:5000/|ocp4dt.to.quay"
+  labels:
+    env: test
+    severity: low

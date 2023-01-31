@@ -1,0 +1,7 @@
+---
+- targets:
+    - "blackbox_exporter.localhost|icmp|192.168.1.2|159 офис Москва|11.123|22.234"
+    
+  labels:
+    env: prod
+    severity: normal

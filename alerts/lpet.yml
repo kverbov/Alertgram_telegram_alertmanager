@@ -1,0 +1,83 @@
+groups:
+
+###################################################################
+# DBO EVO
+###################################################################
+
+#  - name: AntiFraudSystems
+#    rules:
+#
+#      - alert: AFSKafkaConsumerGroupLagInTopics
+#        expr: sum ( kafka_consumergroup_lag > 100 )
+
+  - name: LpetAlerts
+    rules:
+      - alert: KafkaTopicReplicationLag_LPET
+        expr: avg(consumergroup_topic:kafka_consumergroup_lag:sum { env = "prod", project = "evo" , topic=~"lpet.prod.presentment-bridge.raw-transactions.v0|lpet.prod.transaction-service.input.v0|lpet.prod.accounting.operation-input.v0|lpet.prod.transaction-service.input.v0"}) by (consumergroup, topic, owner) > 100
+        for: 30s
+        labels:
+            severity: warning
+            project: "evo"
+            env: "prod"
+            owner: "lpet"
+        annotations:
+          description: 'Important kafka topic have high replication lag {{ $value | printf "%.2f"}}. Check consumer!'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+###NodeExporter_HOST_UTIL_rules_PROD###
+      - alert: EvoHostHighCPULoad
+        expr: sum((100 -(avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="node_exporter",env="prod",instance=~"postgres_prod_lpet.*"}[5m])) * 100)) * on (instance) group_right (domainname) node_uname_info) by (instance, env, nodename) > 60
+        for: 5m
+        labels:
+          severity: high
+          owner: "lpet"
+          project: evo
+          env: prod
+        annotations:
+          summary: 'CPU utilization is {{ $value | printf "%.2f" }} % for more than 5m. Threshold 60% CPU util.'
+          advice: 'Check CPU utilization. Instructions: https://kb.bank.rrr.vip-clients/pages/viewpage.action?pageId=451335178'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: EvoHostHighCpuIOWait
+        expr: sum((avg by(instance) (rate(node_cpu_seconds_total{mode="iowait",job="node_exporter",env="prod",instance=~"postgres_prod_lpet.*"}[6m])) * 100) * on (instance) group_right (domainname) node_uname_info) by (instance, env, nodename) > 30
+        for: 5m
+        labels:
+          severity: high
+          owner: "lpet"
+          project: evo
+          env: prod
+        annotations:
+          summary: 'CPU IOWAIT is {{ $value | printf "%.2f" }} % for more than 6m. Threshold 30% IOwaits'
+          advice: 'Check disks utilization'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: EvoHostOutOfMemory
+        expr: sum((node_memory_MemAvailable_bytes {job="node_exporter",project="evo",env="prod",instance=~"postgres_prod_lpet.*"} / node_memory_MemTotal_bytes * 100) * on (instance) group_right (domainname) node_uname_info) by (instance, env, nodename) < 10
+        for: 2m
+        labels:
+          severity: high
+          owner: "lpet"
+          project: evo
+          env: prod
+        annotations:
+          summary: 'Host out of memory. Node memory is filling up ({{ $value | printf "%.2f"}}% left). Threshold 10% free memory.'
+          advice: 'Check MEMORY utilization'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}
+
+      - alert: DiskFreeLessThan15%
+        expr: ( 100 - ( node_filesystem_avail_bytes { mountpoint !~ "/boot|/home", project = "evo", env="prod", instance=~"postgres_prod_lpet.*" } / node_filesystem_size_bytes { mountpoint !~ "/boot|/home", project = "evo", env="prod", instance=~"postgres_prod_lpet.*" } * 100 ) ) > 85
+        for: 1m
+        labels:
+          severity: high
+          owner: "lpet"
+          project: evo
+        annotations:
+          summary: 'There is {{ $value | printf "%.2f"}}% of disk space used!!! Threshold 85%'
+          advice: 'Cleanup disk ASAP!!! Instructions: https://kb.bank.rrr.vip-clients/pages/viewpage.action?pageId=451335341'
+          help: 'df -h'
+          timestamp: >
+            {{ with query "time()+10800" }}{{ . | first | value | humanizeTimestamp | printf "%.19s UTC+3"}}{{ end }}

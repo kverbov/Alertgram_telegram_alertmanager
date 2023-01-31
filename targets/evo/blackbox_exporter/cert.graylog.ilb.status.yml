@@ -1,0 +1,10 @@
+---
+- targets:
+    - "blackbox_exporter.localhost|http_2xx|http://192.168.1.2:9000/api/system/lbstatus|cert.graylog.ilb.status"
+  labels:
+    env: "cert"
+    project: "evo"
+    owner: "profiteroles"
+    severity: "high"
+
+  

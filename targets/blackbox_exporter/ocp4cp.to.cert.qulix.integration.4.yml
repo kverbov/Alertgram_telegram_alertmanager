@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.ocp.bank.rrr.vip-clients|http_2xx|http://192.168.1.2:9099/integration/version.txt|ocp4cp.to.cert.qulix.integration.4"
+  labels:
+    env: cert
+    severity: low

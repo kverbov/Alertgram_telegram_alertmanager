@@ -1,0 +1,6 @@
+---
+- targets:
+    - "bbe-dr-dbank-common.apps.ocp1.bank.rrr.vip-clients|http_2xx|http://quay.paas.bank.rrr.vip-clients:5000/|ocp4dr.to.quay"
+  labels:
+    env: prod
+    severity: normal

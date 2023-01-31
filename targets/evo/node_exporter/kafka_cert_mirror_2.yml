@@ -1,0 +1,8 @@
+---
+- targets:
+    - "192.168.1.2:9100"
+  labels:
+    env: "cert"
+    project: "evo"
+    instance: "kafka.cert.mirror.2"
+    owner: "profiteroles"

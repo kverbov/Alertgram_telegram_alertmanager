@@ -1,0 +1,10 @@
+---
+- targets:
+    - "bbe-certprod-dbank-common.apps.ocp.bank.rrr.vip-clients|http_2xx|https://mbr-api.bank.ru|prod.mbr-api.bank.ru"
+  labels:
+    env: "prod"
+    project: "evo"
+    owner: "profiteroles"
+    severity: "high"
+
+  

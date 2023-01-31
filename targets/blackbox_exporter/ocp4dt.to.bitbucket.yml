@@ -1,0 +1,6 @@
+---
+- targets:
+    - "blackbox-exporter-blackbox-exporter.apps.tpaas.tbank.trrr.tvip-clients|http_2xx|https://bitbucket.domain/projects|ocp4dt.to.bitbucket"
+  labels:
+    env: test
+    severity: low
